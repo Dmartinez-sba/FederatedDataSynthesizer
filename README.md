@@ -30,10 +30,13 @@ conda activate ./.venv
 pip install -r requirements_minimal.txt 
 ```
 
-4. Then, run the following command for a set of experiments: 
+4. Then, run the following command to run an example for the adult dataset: 
 ```bash
    python main.py -cf experiments_config/adult_experiments_tuned -dn adult -fr results -ef epsilon0
 ```
+Depending on the data and configuration files the command should be adjusted. 
+
+In the given example, all config files in the folder epsilon0 are run and the output of experiments are saved in the results/adult folder.
 
 # Federated Setup 
 

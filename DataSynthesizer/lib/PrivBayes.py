@@ -206,10 +206,8 @@ def get_noisy_distribution_of_attributes(attributes, encoded_dataset, epsilon=0.
     data['count'] = 1
     stats = data.groupby(attributes,observed=False).sum() # Changed to accept all possible combinations even if not present
     try: 
-        print('try iterables')
         iterables = [range(len(data[attr].cat.categories.unique())) for attr in attributes] # Added to accept all possible combinations even if not present 
     except:
-        print('no try iterables')
         iterables = [range(int(encoded_dataset[attr].max()) + 1) for attr in attributes] 
     
     products = product(*iterables)

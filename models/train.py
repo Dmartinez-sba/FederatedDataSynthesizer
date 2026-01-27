@@ -16,6 +16,7 @@ import synthgauge as sg
 import tempfile
 import flwr as fl
 import pandas as pd
+import ray
 
 from evaluation.utils import encode_categorical_columns
 from evaluation.metrics.bivariate_fidelity import pairwise_correlation_difference
@@ -219,7 +220,7 @@ def federated_training(config, train_data, py_modules, number_of_clients, client
             os.makedirs(temp_dir)
 
     
-    client_resources = {'num_cpus':0.001}
+    client_resources = {'num_cpus':0.1, 'num_gpus':0}
     
         
     # Start federated simulation
@@ -229,7 +230,7 @@ def federated_training(config, train_data, py_modules, number_of_clients, client
         config=fl.server.ServerConfig(num_rounds=num_of_rounds,round_timeout=2000),
         client_resources=client_resources,
         strategy=strategy,
-        ray_init_args={"runtime_env":{"py_modules": py_modules},"num_cpus": 1},
+        ray_init_args={"runtime_env":{"py_modules": py_modules},"num_cpus": 2},
         
     )
     
@@ -239,6 +240,8 @@ def federated_training(config, train_data, py_modules, number_of_clients, client
     
     synthetic_data_fed= generate_synthetic_data(description_file_fed_ga,train_data.shape[0],seed)
 
+    ray.shutdown()
+     
     return synthetic_data_fed
 
  
