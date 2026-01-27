@@ -1,6 +1,6 @@
 # Federated DataSynthesizer
 
-This is an extended version of the Enhanced Data Synthesizer [EnhancesDataSynthesizer](https://github.com/sbaresearch/EnhancedDataSynthesizer), which generates synthetic data that simulates a given
+This is an extended version of the Enhanced Data Synthesizer [EnhancedDataSynthesizer](https://github.com/sbaresearch/EnhancedDataSynthesizer), which generates synthetic data that simulates a given
 dataset integrating GA algorithms and mitigation strategies against attribute disclosure. For details on that project and usage, please refer to the official website!
 
 This extended version presents a federated extension of the Enhanced Data Synthesizer, in which the migration of individuals across multiple clients at each federated round of the genetic algorithm is used to enhance diversity in Bayesian network structure learning and to learn a global model capable of generating synthetic data that follows the joint distribution of all clients.
@@ -44,7 +44,11 @@ The input data is first split into a training set (80%) and a test set (20%). Th
 The federated experiments, are compared with two baselines: 
 
 - Centralized baseline: This case generates synthetic data from all the centralized training data using the Enhanced Data Synthsizer original code. 
-- Local baseline: This case generates synthetic data from the local data at each of the clients in the federated setup using the Enhanced Data Synthsizer original code. To compare the results to the federated and centralized baseline, average metrics for this case are reported. 
+- Local baseline: This case generates synthetic data from the local data at each of the clients in the federated setup using the Enhanced Data Synthesizer original code. To compare the results to the federated and centralized baseline, average metrics for this case are reported. 
 
 # Evaluation part 
-All experiments are conducted three times to ensure robustness, with results reported as the mean and standard deviation of the evaluation metrics. 
+All experiments are conducted three times to ensure robustness, with results reported as the mean and standard deviation of the evaluation metrics including the following dimensions: 
+
+- Fidelity: metrics evaluate estimates the similarity of the synthetic data with respect to the original data.
+- Utility: metrics evaluate the usefulness of synthetic data for a specific application compared to the original data.
+- Privacy: metrics evaluate attribute disclosure attacks and distance closeness of synthetic and real data. 
