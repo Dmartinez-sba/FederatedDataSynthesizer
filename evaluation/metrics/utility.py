@@ -61,8 +61,8 @@ def machine_learning_evaluation(df_train,
     # Perform preprocessing
     X_train=preprocessor.fit_transform(X_train)
     X_test=preprocessor.transform(X_test)
-    #y_train=label_encoder.transform(y_train)
-    #y_test=label_encoder.transform(y_test)
+    y_train=label_encoder.transform(y_train)
+    y_test=label_encoder.transform(y_test)
 
     if task == 'Classification':
         models = {
