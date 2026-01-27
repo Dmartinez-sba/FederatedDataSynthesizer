@@ -1,0 +1,40 @@
+source: UCI Machine Learning
+dataset_name: adult
+input_dir: in/federated_correlated_attribute_mode_ga_flower/
+output_dir: out/federated_correlated_attribute_mode_ga_flower/
+train_data_path: data/adult_complete.csv
+test_data_path: data/adult_test.csv
+seed: 0
+n_splits_experiment: 5
+federated_learning: 
+    number_of_clients: 2
+    partition_scenario_fl : 'noniid-labeldir'
+    target: 'income'
+    max_range: 15000
+    epochs: 400
+    strategy:
+        min_evaluate_clients: 1
+        min_available_clients: 2
+    genetic_algorithm:
+        source_genes: 10
+        genepool_size: 200
+        aggregation_interval: 20
+        epsilon: 0
+        degree_of_bayesian_network: 2
+    data_synthesizer:
+        threshold_value: 20
+        categorical_attributes:
+            - workclass
+            - education-num 
+            - marital-status
+            - occupation 
+            - relationship
+            - race
+            - sex
+            - native-country
+            - income
+        candidate_keys: []
+evaluation:
+    metrics:
+        - accuracy
+        - f1

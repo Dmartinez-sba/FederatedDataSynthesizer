@@ -1,0 +1,59 @@
+data_synthesizer:
+    threshold_value: 15
+    categorical_attributes:
+        - workclass
+        - education-num 
+        - marital-status
+        - occupation 
+        - relationship
+        - race
+        - sex
+        - native-country
+        - income
+sweep_configuration:
+  method: grid
+  metric:
+    goal: minimize
+    name: avg_log_cluster
+  parameters:
+    seed:
+      value: 0
+    n_splits: 
+      value: 3
+    epochs:
+      value: 800
+    dataset_name:
+      value: 'adult'    
+    data_path:
+      value: notebooks/data/adult_complete.csv
+    target:
+      value: 'income'
+    aggregation_type: 
+      value: 'frequencies'
+    threshold: 
+      value: 15
+    genetic_algorithm:
+      parameters:
+        degree_of_bayesian_network:
+          value: 3
+        epsilon:
+          value: 0
+        genepool_size:
+          values: [100,150,200]
+        source_genes:
+          values: [5,10,15]
+        aggregation_interval:
+          values: [5,10,20,25]
+    data_synthesizer:
+      parameters:
+        threshold_value: 
+          value: 15
+        categorical_attributes:
+          value: ['workclass','education-num','marital-status','occupation','relationship','race','sex','native-country','income']
+    federated_learning:
+      parameters:
+        number_of_clients: 
+          value: 5
+        scenario:
+          value: 'noniid-labeldir'
+  

@@ -142,7 +142,7 @@ sensitivity_analysis/
 
 # experiments file
 experiments/
-*.yaml
+
 
 #Data
 notebooks/data/

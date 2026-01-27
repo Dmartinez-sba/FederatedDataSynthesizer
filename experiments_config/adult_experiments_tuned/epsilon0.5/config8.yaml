@@ -1,0 +1,50 @@
+data_path: ./data/adult_complete.csv
+dataset_name: adult
+local: True
+data_synthesizer:
+    threshold_value: 15
+    categorical_attributes:
+        - workclass
+        - education-num 
+        - marital-status
+        - occupation 
+        - relationship
+        - race
+        - sex
+        - native-country
+        - income
+    candidate_keys: []
+    target: 'income'
+aggregation_type: 'frequencies'
+threshold: 15
+epochs: 800
+n_splits: 3
+seed: 0
+target: income
+genetic_algorithm:
+    source_genes: 10
+    genepool_size: 100
+    aggregation_interval: 20
+    epsilon: 0.5
+    degree_of_bayesian_network: 3
+federated_learning:
+    number_of_clients: 10
+    scenario: 'noniid-labeldir'
+attribute_disclosure:
+    number_of_scenarios: 2
+    scenario0:
+        quasi_identifiers:
+            - 'age'
+            - 'education-num'
+            - 'sex'
+            - 'race'
+        key_length: 3
+        target: 'marital-status'
+    scenario1:
+        quasi_identifiers:
+            - 'age'
+            - 'education-num'
+            - 'sex'
+            - 'race'
+        key_length: 3
+        target: 'workclass'

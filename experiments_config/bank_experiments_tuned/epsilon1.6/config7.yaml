@@ -1,0 +1,33 @@
+data_path: ./data/bank.csv
+dataset_name: bank
+local: True
+data_synthesizer:
+    threshold_value: 15
+    categorical_attributes:
+        - job
+        - marital
+        - education
+        - default
+        - housing
+        - loan
+        - contact
+        - poutcome
+        - month
+        - y
+    candidate_keys: []
+    target: y
+aggregation_type: 'frequencies'
+threshold: 15
+epochs: 800
+n_splits: 3
+seed: 0
+target: y
+genetic_algorithm:
+    source_genes: 15
+    genepool_size: 150
+    aggregation_interval: 5
+    epsilon: 1.6
+    degree_of_bayesian_network: 3
+federated_learning:
+    number_of_clients: 5
+    scenario: 'noniid-labeldir'

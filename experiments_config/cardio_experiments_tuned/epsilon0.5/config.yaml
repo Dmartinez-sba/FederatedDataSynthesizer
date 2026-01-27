@@ -1,0 +1,30 @@
+data_path: ./data/cardio.csv
+dataset_name: cardio
+local: True
+data_synthesizer:
+    threshold_value: 15
+    categorical_attributes:
+        - gender
+        - cholesterol
+        - gluc
+        - smoke
+        - alco
+        - active
+        - cardio
+    candidate_keys: []
+    target: 'cardio'
+aggregation_type: 'frequencies'
+threshold: 15
+epochs: 800
+n_splits: 3
+seed: 0
+target: cardio
+genetic_algorithm:
+    source_genes: 15
+    genepool_size: 150
+    aggregation_interval: 25
+    epsilon: 0.5
+    degree_of_bayesian_network: 2
+federated_learning:
+    number_of_clients: 3
+    scenario: 'iid'
