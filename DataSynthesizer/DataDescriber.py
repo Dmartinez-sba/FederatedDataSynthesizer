@@ -250,7 +250,7 @@ class DataDescriber:
             raise Exception("Correlated Attribute Mode requires at least 2 attributes(i.e., columns) in dataset.")
 
         start=time.time()
-        ga_network_builder = GANetworkBuilder(k,source_genes=source_genes,genepool_size=genepool_size,epochs=epochs,seed=0, sensi=sensi,target=target)
+        ga_network_builder = GANetworkBuilder(k,source_genes=source_genes,genepool_size=genepool_size,epochs=epochs,seed=seed, sensi=sensi,target=target)
         self.bayesian_network = ga_network_builder.ga_network(self.df_encoded)[1:]
         print(self.bayesian_network)
         end=time.time()

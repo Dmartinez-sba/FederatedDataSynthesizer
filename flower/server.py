@@ -57,7 +57,8 @@ class FedGA(FedAvg):
         genetic_algorithm_parameters: Dict = None,
         total_number_of_rounds: int = 1,
         aggregation_type: str = 'frequencies',
-        threshold: int = None
+        threshold: int = None,
+        seed: int = 0
     ) -> None:
         """Federated Genetic Algorithm for PrivBayes
 
@@ -113,6 +114,7 @@ class FedGA(FedAvg):
         self.total_number_of_rounds=total_number_of_rounds
         self.aggregation_type = aggregation_type
         self.threshold = threshold
+        self.train_seed = seed
 
     def initialize_parameters(
         self, client_manager: Optional[ClientManager] = None
@@ -162,9 +164,10 @@ class FedGA(FedAvg):
                     'size': self.min_available_clients,
                     'evaluate_individuals': True if server_round == self.total_number_of_rounds-1 else False,
                     'aggregation_type': self.aggregation_type,
-                    'threshold': self.threshold
-                    
-                } 
+                    'threshold': self.threshold,
+                    'training_seed': self.train_seed
+
+                }
         common_encoding = json.dumps(self.common_encoding)
         global_missing_rate = json.dumps(self.global_missing_rate)
         config['encoding']= common_encoding 

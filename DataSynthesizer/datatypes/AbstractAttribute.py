@@ -5,11 +5,12 @@ from typing import List, Union
 
 import numpy as np
 from numpy.random import choice
+import pandas as pd
 from pandas import Series
 
 from DataSynthesizer.datatypes.utils import DataType
 from DataSynthesizer.lib import utils
-
+from sklearn.preprocessing import KBinsDiscretizer
 
 class AbstractAttribute(object):
     __metaclass__ = ABCMeta
@@ -42,6 +43,12 @@ class AbstractAttribute(object):
         elif numerical_range:
             self.min, self.max = numerical_range
             self.distribution_bins = np.array([self.min, self.max])
+        elif self.data_dropna.empty:
+            # Column is entirely missing (missing_rate == 1.0), e.g. a federated
+            # client with no observed values for this attribute. Use a degenerate
+            # domain so describe/generate route everything through the missing bin.
+            self.min = self.max = 0
+            self.distribution_bins = np.array([0])
         else:
             self.min = float(self.data_dropna.min())
             self.max = float(self.data_dropna.max())
@@ -49,6 +56,9 @@ class AbstractAttribute(object):
                 self.distribution_bins = self.data_dropna.unique()
             else:
                 self.distribution_bins = np.array([self.min, self.max])
+
+        if self.distribution_bins.size == 0:
+            self.distribution_bins = np.array([0])
 
         self.distribution_probabilities = np.full_like(self.distribution_bins, 1 / self.distribution_bins.size)
 

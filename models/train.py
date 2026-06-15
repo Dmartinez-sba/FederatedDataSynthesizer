@@ -105,7 +105,7 @@ def centralized_training(config, train_data, size=None, seed=0, save_dir='./',de
     
     
     if not Path(f'{temp_dir}/{description_file_name}').is_file():
-        describer_ga = DataDescriber(category_threshold=config.data_synthesizer['threshold_value'])
+        describer_ga = DataDescriber(category_threshold=config.data_synthesizer['threshold_value'],histogram_bins=config.data_synthesizer['histogram_bins'])
         describer_ga.describe_dataset_in_correlated_attribute_mode_ga(df_input=train_data,
                                                                     epsilon=config.genetic_algorithm['epsilon'],
                                                                     k=config.genetic_algorithm['degree_of_bayesian_network'],
@@ -127,7 +127,54 @@ def centralized_training(config, train_data, size=None, seed=0, save_dir='./',de
                
     return synthetic_data_cen
 
+def centralized_training_original_priv_bayes(config, train_data, size=None, seed=0, save_dir='./',description_file_name='ga_corrmeta_cen.json'):
+    """ Runs the centralized Bayesian Network with a genetic algorithm.
+
+    Parameters:
+    -----------
+        config (Dict): 
+            Configuration dict with parameters for the training.
+        train_data (pandas.DataFrame): 
+            Dataframe with the training data. 
+        seed (int, optional): 
+            Random seed. Defaults to 0.
+
+    Returns:
+    -------
+        synthetic_data (pandas.DataFrame): 
+            Dataframe with the synthetic data generated. 
+    """  
+    temp_dir=save_dir
+    
+    categorical_attributes = config.data_synthesizer.categorical_attributes
+
+    cat_attributes = dict()
+    for val in categorical_attributes:
+        cat_attributes[val]= True
+        
+
+    description_file_cen= os.path.join(temp_dir, description_file_name)
+    
+    
+    if not Path(f'{temp_dir}/{description_file_name}').is_file():
+        describer_ga = DataDescriber(category_threshold=config.data_synthesizer['threshold_value'],histogram_bins=config.data_synthesizer['histogram_bins'])
+        describer_ga.describe_dataset_in_correlated_attribute_mode(df_input=train_data,
+                                                                    k=config.genetic_algorithm['degree_of_bayesian_network'],
+                                                                    epsilon=config.genetic_algorithm['epsilon'],
+                                                                    attribute_to_is_categorical=cat_attributes, # TO DO
+                                                                    attribute_to_is_candidate_key={}, # TO DO
+                                                                    seed=seed,
+                                                                    )
+        
+        describer_ga.save_dataset_description_to_file(description_file_cen)
+        print("Wrote network to " + description_file_cen) 
+        
+    if size == None:
+        size = train_data.shape[0]
+    
+    synthetic_data_cen= generate_synthetic_data(description_file_cen,size)
                
+    return synthetic_data_cen              
 
 
 def local_training(config, train_data, clients_partition,seed=0,save_dir='./'):
@@ -154,7 +201,7 @@ def local_training(config, train_data, clients_partition,seed=0,save_dir='./'):
     
     for elem in clients_partition.items():
         local_data = df.filter(items = elem[1], axis=0).copy(deep=True)
-        synthetic_data = centralized_training(config,local_data,size=size,seed=seed,save_dir=save_dir,description_file_name=f'ga_corrmeta_local_{elem[0]}.json')
+        synthetic_data = centralized_training(config,local_data,size=local_data.shape[0],seed=seed,save_dir=save_dir,description_file_name=f'ga_corrmeta_local_{elem[0]}.json')
         synthetic_datasets.append(synthetic_data)
                
     return synthetic_datasets
@@ -181,6 +228,9 @@ def federated_training(config, train_data, py_modules, number_of_clients, client
         synthetic_data (pandas.DataFrame): 
             Dataframe with the synthetic data generated. 
     """
+
+    # Must be before Ray starts
+    #os.environ["RAY_memory_usage_threshold"] = "0.98"
         
     # Parse arguments for DataSynthesizer
     if 'categorical_attributes' not in config.data_synthesizer: 
@@ -188,19 +238,28 @@ def federated_training(config, train_data, py_modules, number_of_clients, client
     else:
         categorical_attributes = list(config.data_synthesizer['categorical_attributes'])
 
+    if 'candidate_keys' not in config.data_synthesizer:
+         candidate_keys = []
+    else: 
+         candidate_keys = list(config.data_synthesizer['candidate_keys'])
+    
     cat_attributes = dict()
     for val in categorical_attributes:
         cat_attributes[val]= True
+
+    candidate_keys_dict = dict()
+    for val in candidate_keys:
+        candidate_keys_dict[val]= True
             
     params={
         'list_categorical_attributes': categorical_attributes,
         'category_threshold': config.data_synthesizer['threshold_value'],
-        'candidate_keys': {}, # TO DO
+        'candidate_keys': candidate_keys_dict, 
+        'histogram_bins': config.data_synthesizer['histogram_bins'],
         'categorical_attributes': cat_attributes # TO DO
     }
 
     num_of_rounds = config.epochs //  config.genetic_algorithm['aggregation_interval']
-    
     
     
     strategy = FedGA(
@@ -210,18 +269,21 @@ def federated_training(config, train_data, py_modules, number_of_clients, client
                     genetic_algorithm_parameters=config.genetic_algorithm,
                     total_number_of_rounds=num_of_rounds,
                     aggregation_type = config.aggregation_type,
-                    threshold = config.threshold
+                    threshold = config.threshold,
+                    seed = seed
                     )
     temp_dir=save_dir
     
         
     # Check if path for saving results exists, if not creates the corresponding folders
     if not os.path.exists(temp_dir):
-            os.makedirs(temp_dir)
+        os.makedirs(temp_dir)
 
     
-    client_resources = {'num_cpus':0.1, 'num_gpus':0}
+    client_resources = {'num_cpus':1, 'num_gpus':0}
+
     
+    ray.init(object_store_memory=1_000_000_000,ignore_reinit_error=True)
         
     # Start federated simulation
     fl.simulation.start_simulation(
@@ -230,17 +292,17 @@ def federated_training(config, train_data, py_modules, number_of_clients, client
         config=fl.server.ServerConfig(num_rounds=num_of_rounds,round_timeout=2000),
         client_resources=client_resources,
         strategy=strategy,
-        ray_init_args={"runtime_env":{"py_modules": py_modules},"num_cpus": 2},
-        
+        ray_init_args={"runtime_env":{"py_modules": py_modules}},   
     )
     
+    ray.shutdown()
     
     #Define the paths to save the global model and the synthetic data from the federated simulation
     description_file_fed_ga = os.path.join(temp_dir, f"ga_corrmeta_fed.json")
     
     synthetic_data_fed= generate_synthetic_data(description_file_fed_ga,train_data.shape[0],seed)
 
-    ray.shutdown()
+    
      
     return synthetic_data_fed
 

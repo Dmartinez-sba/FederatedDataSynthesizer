@@ -91,6 +91,7 @@ class FlowerClient(fl.client.NumPyClient):
             individuals = [transformed_parameters[i:i + split_size] for i in range(0, len(transformed_parameters), split_size)]
             self.params = individuals
 
+
     def fit(
         self, parameters: List[np.ndarray], config: Dict
     ) -> Tuple[List[np.ndarray], int, Dict]:
@@ -99,7 +100,7 @@ class FlowerClient(fl.client.NumPyClient):
         if config['server_round']==1:
             self.set_global_attributes_info(json.loads(config['encoding']))
             self.set_global_missing_rate(json.loads(config['missing_rate']))
-            self.set_distributions()
+            self.set_distributions(config['epsilon'])
         if config['learning_phase'] == 'structure_learning': 
             self.set_parameters(parameters,config)
             self.describer.describe_dataset_in_correlated_attribute_mode_ga_locally(  
@@ -110,7 +111,7 @@ class FlowerClient(fl.client.NumPyClient):
                                                             source_genes=config['source_genes'],
                                                             genepool_size=config['genepool_size'],
                                                             epochs=config['local_epochs'],
-                                                            seed=self.cid,
+                                                            seed=int(self.cid) + 1000 * int(config.get('training_seed', 0)),
                                                             )
             best_individual=self.describer.ga_network_builder.best_individual
             parameters=best_individual
@@ -181,9 +182,9 @@ class FlowerClient(fl.client.NumPyClient):
         for attr, column in self.describer.attr_to_column.items():
             self.describer.data_description['attribute_description'][attr] = column.to_json()
 
-    def set_distributions(self):
+    def set_distributions(self,epsilon):
         '''Function to calculate the distribution bins probability locally'''
-        self.describer.describe_dataset_in_independent_attribute_mode_locally(epsilon=0)
+        self.describer.describe_dataset_in_independent_attribute_mode_locally(epsilon=epsilon)
 
     def evaluate_individuals(self, individuals):
         '''Function to evaluate a group of individuals representing BNs locally'''
@@ -207,18 +208,25 @@ def get_client_fn(clients_partitions: Dict, train_data: pd.DataFrame, save_dir: 
     def client_fn(cid) -> FlowerClient:
         elem = clients_partitions[int(cid)]
         local_data = train_data.filter(items = elem, axis=0)
+        candidate_keys = kwargs['candidate_keys']
+        unique_non_categorical_cols = [
+            col for col in local_data.columns
+            if col not in kwargs['categorical_attributes'].keys() and local_data[col].nunique() == local_data[col].count()
+        ] 
+        for col in unique_non_categorical_cols:
+            candidate_keys[col] = False # Added to avoid columns with all unique values to be considered as candidate keys
         #data_file=f'{save_dir}/data_client{cid}.csv'
         describer_file=f'{save_dir}/describer_client{cid}'
         if os.path.exists(describer_file):
             with open(describer_file, 'rb') as f:
                 describer = pickle.load(f)
         else:
-            describer = DataDescriber(category_threshold=kwargs['category_threshold'])
+            describer = DataDescriber(category_threshold=kwargs['category_threshold'],histogram_bins=kwargs['histogram_bins'])
             describer.describe_dataset_in_random_mode(df_input=local_data,
                                                     attribute_to_is_categorical=kwargs['categorical_attributes'],
-                                                    attribute_to_is_candidate_key=kwargs['candidate_keys']
+                                                    attribute_to_is_candidate_key=candidate_keys
                                                     )
-        client = FlowerClient(cid, describer, train_data, kwargs['list_categorical_attributes'] , save_dir, save_dir, True) 
+        client = FlowerClient(cid, describer, train_data, kwargs['list_categorical_attributes'], save_dir, save_dir, True) 
         return client 
     
     return client_fn
