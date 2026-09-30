@@ -61,8 +61,7 @@ class FlowerClient(fl.client.NumPyClient):
         str_df = self.describer.df_encoded
         str_df = set_classes_from_attributes_to_df(str_df,self.describer.data_description['attribute_description'])
         bn=self.describer.ga_network_builder.convert_to_network(individual, str_df)[1:]
-        self.describer.data_description['bayesian_network'] = bn 
-        self.describer.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions( bn, str_df, config['epsilon'])
+        self.describer.data_description['bayesian_network'] = bn
         print(f'Client {self.cid} updating final model')
         if config['aggregation_type'] == 'frequencies':
             frequencies = get_all_noisy_frequencies(bn, str_df, config['epsilon'],partial_noise=True,number_of_clients=config['size'])
@@ -76,7 +75,9 @@ class FlowerClient(fl.client.NumPyClient):
         elif config['aggregation_type'] == 'rfrequencies': 
             frequencies = get_modify_frequencies_with_threshold(bn, str_df, config['threshold'],method='rounding')
             self.params = frequencies
-        else:  
+        else:
+            # Only this mode shares the (locally noised) CPDs; the frequency modes share counts only.
+            self.describer.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions( bn, str_df, config['epsilon'])
             list_conditional_probabilities = dict_to_list(self.describer.data_description['conditional_probabilities'])
             list_conditional_probabilities= [np.array(element) if not isinstance(element, np.ndarray) else element for element in list_conditional_probabilities]
             self.params = list_conditional_probabilities
@@ -120,7 +121,8 @@ class FlowerClient(fl.client.NumPyClient):
             self.update_final_model(parameters,config)
             self.get_parameters()
             parameters=self.params
-            metrics = {'conditional_probabilities':json.dumps(self.describer.data_description['conditional_probabilities'])}
+            if 'frequencies' not in config['aggregation_type']:
+                metrics = {'conditional_probabilities':json.dumps(self.describer.data_description['conditional_probabilities'])}
         if self.local_save:
             self.save()        
         return (parameters, 0, metrics)

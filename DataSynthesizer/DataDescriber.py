@@ -258,8 +258,10 @@ class DataDescriber:
 
         self.data_description['bayesian_network'] = self.bayesian_network
 
+        # The GA structure learning is not differentially private, so the whole budget goes to parameter
+        # learning (same budget as the federated clients).
         self.data_description['conditional_probabilities'] = construct_noisy_conditional_distributions(
-            self.bayesian_network, self.df_encoded, epsilon / 2)
+            self.bayesian_network, self.df_encoded, epsilon)
         
     def describe_dataset_in_independent_attribute_mode_locally(self,
                                                        epsilon=0.1,

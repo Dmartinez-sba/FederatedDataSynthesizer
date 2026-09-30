@@ -238,11 +238,12 @@ def get_noisy_distribution_of_attributes(attributes, encoded_dataset, epsilon=0.
         num_tuples, num_attributes = encoded_dataset.shape
         noise_para = laplace_noise_parameter(k, num_attributes, num_tuples, epsilon)
         if partial_noise: # Added for FedEnhaced DataSynthesizer
+            # DLPA: each client adds the difference of two Gamma(1/n, b) draws, so the sum over the
+            # n clients is exactly Laplace(b). Counts are not clipped here, the server clips after aggregation.
             size=stats.index.size
-            scale = noise_para/(2*number_of_clients)
-            partial_noises=np.random.normal(loc=0,scale=scale,size=size)**2+np.random.normal(loc=0,scale=scale,size=size)**2-np.random.normal(loc=0,scale=scale,size=size)**2-np.random.normal(loc=0,scale=scale,size=size)**2
+            shape = 1/number_of_clients
+            partial_noises=np.random.gamma(shape,scale=noise_para,size=size)-np.random.gamma(shape,scale=noise_para,size=size)
             stats['count'] += partial_noises
-            stats.loc[stats['count'] < 0, 'count'] = 0
         else:
             laplace_noises = np.random.laplace(0, scale=noise_para, size=stats.index.size)
             stats['count'] += laplace_noises

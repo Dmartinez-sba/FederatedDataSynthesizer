@@ -357,8 +357,8 @@ def aggregate_frequencies_and_get_conditional_probabilities(bayesian_network, fr
              
         stats=pd.DataFrame(frequencies_clients[0][0][:,np.arange(k+1)],columns=kplus1_attributes)
         
-        aggregated_frecuencies = aggregate_counts(params_noisy_kplus1_attributes,k) 
-        stats['count'] = aggregated_frecuencies
+        aggregated_frecuencies = aggregate_counts(params_noisy_kplus1_attributes,k)
+        stats['count'] = np.clip(aggregated_frecuencies, 0, None) # clip after aggregation, as in the centralised model
         noisy_dist_of_kplus1_attributes = stats
 
         root_stats = noisy_dist_of_kplus1_attributes.loc[:, [root, 'count']].groupby(root).sum()['count']
@@ -377,8 +377,8 @@ def aggregate_frequencies_and_get_conditional_probabilities(bayesian_network, fr
                 shape_general=params_noisy_attributes[0].shape
                 verify_all_arrays_have_same_size(params_noisy_attributes)
                 stats=pd.DataFrame(frequencies_clients[0][idx-k+1][:,np.arange(k+1)],columns=parents + [child])
-                aggregated_frecuencies = aggregate_counts(params_noisy_attributes,k) 
-                stats['count'] = aggregated_frecuencies
+                aggregated_frecuencies = aggregate_counts(params_noisy_attributes,k)
+                stats['count'] = np.clip(aggregated_frecuencies, 0, None)
                 stats = stats.loc[:, parents + [child, 'count']]
             
             for parents_instance, stats_sub in stats.groupby(parents):
